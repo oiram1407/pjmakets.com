@@ -1,0 +1,12 @@
+# created by virtualenv automatically
+bin/*
+lib/
+pyvenv.cfg
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+/comicsmxapi/migrations/*
