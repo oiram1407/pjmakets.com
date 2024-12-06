@@ -7,3 +7,4 @@ from .Customer import *
 from .Whatsapp import *
 from .ShipProviders import *
 from .Api import *
+from .Category import *
