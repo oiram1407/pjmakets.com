@@ -719,6 +719,7 @@ class WoocommerceWebhook(APIView):
                         "product_width": product_width,
                         "product_length": product_length,
                         "product_images": images,
+                        "product_categories": _categories,
                         "product_editorial": product_editorial,
                         "product_collection": product_collection,
                         "product_listing_type_id": "gold_pro",
@@ -726,6 +727,7 @@ class WoocommerceWebhook(APIView):
                         "product_author": product_author
                     }
                     product_obj_meli_new = product_obj_meli.setNewProduct(product_data_meli)
+
                     #return Response(product_obj_meli_new)
                     if(product_obj_meli_new['status'] == 400):
                         return Response(product_obj_meli_new)

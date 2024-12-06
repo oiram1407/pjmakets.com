@@ -1,5 +1,7 @@
 from ...models.Companies import CompaniesPlataformsRelated
+from ...models.Category import CategoriesRelated
 from ...generals import Generals as cfg
+from .category import DefineCategory
 from unidecode import unidecode
 import requests
 import json
@@ -242,185 +244,302 @@ class MercadoLibreHelper:
             isbn = isbn if(isbn) else '9786075787640'
             author = author if(author) else product_data['product_editorial']
             
-        data_new_product = {
-            "title": (product_data['product_name'][:57] + '...') if len(product_data['product_name']) > 57 else product_data['product_name'],
-            "description": product_data['product_description'],
-            "category_id": "MLM1196",
-            "price": round(meli_price,2),
-            "currency_id": "MXN",
-            "available_quantity": product_data['product_stock'],
-            "pictures": product_data['product_images'],
-            "buying_mode": "buy_it_now",
-            "sale_terms": [
-                {
-                    "id": "WARRANTY_TYPE",
-                    "name": "Tipo de garantía",
-                    "value_id": "6150835",
-                    "value_name": "Sin garantía",
-                    "value_struct": None,
-                    "values": [
-                        {
-                            "id": "6150835",
-                            "name": "Sin garantía",
-                            "struct": None
-                        }
-                    ],
-                    "value_type": "list"
-                }
-            ],
-            "listing_type_id": product_data['product_listing_type_id'],
-            "attributes": [
-                {
-                    "id": "AUTHOR",
-                    "value_name": author
-                },
-                {
-                    "id": "ACCESSORIES_INCLUDED",
-                    "value_name": "No"
-                },
-                {
-                    "id": "BOOKS_NUMBER_PER_SET",
-                    "value_name": "1"   
-                },
-                {
-                    "id": "BOOK_COLLECTION",
-                    "value_name": product_data['product_collection']
-                },
-                {
-                    "id": "BOOK_COVER",
-                    "value_name": "Blanda"
-                },
-                {
-                    "id": "BOOK_COVER_MATERIAL",
-                    "value_name": "Papel"
-                },
-                {
-                    "id": "BOOK_EDITION",
-                    "value_name": "1"
-                },
-                {
-                    "id": "BOOK_GENRE",
-                    "value_name": "Aventura,Manga"
-                },
-                {
-                    "id": "BOOK_PUBLISHER",
-                    "value_name": product_data['product_editorial']
-                },
-                {
-                    "id": "BOOK_SERIE",
-                    "value_name": product_data['product_collection']
-                },
-                {
-                    "id": "BOOK_SIZE",
-                    "value_name": "Manga"
-                },
-                {
-                    "id": "BOOK_SUBGENRES",
-                    "value_name": "Manga"
-                },
-                {
-                    "id": "BOOK_TITLE",
-                    "value_name": product_data['product_collection']
-                },
-                {
-                    "id": "BOOK_VERSION",
-                    "value_name": "Primera"
-                },
-                {
-                    "id": "BOOK_VOLUME",
-                    "value_name": "1"
-                },
-                {
-                    "id": "CO_AUTHORS",
-                    "value_name": "-1"
-                },
-                {
-                    "id": "HEIGHT",
-                    "value_name": f"{product_data['product_height']} cm"
-                },
-                {
-                    "id": "IS_WRITTEN_IN_CAPITAL_LETTERS",
-                    "value_name": "No"
-                },
-                {
-                    "id": "ITEM_CONDITION",
-                    "value_name": "Nuevo"
-                },
-                {
-                    "id": "LANGUAGE",
-                    "value_name": "Español"
-                },
-                {
-                    "id": "MAX_RECOMMENDED_AGE",
-                    "value_name": "100 años"
-                },
-                {
-                    "id": "MIN_RECOMMENDED_AGE",
-                    "value_name": "8 años"
-                },
-                {
-                    "id": "NARRATION_TYPE",
-                    "value_name": "Manga"
-                },
-                {
-                    "id": "PAGES_NUMBER",
-                    "value_name": "150"
-                },
-                {
-                    "id": "PUBLICATION_YEAR",
-                    "value_name": "201"
-                },
-                {
-                    "id": "TRANSLATORS",
-                    "value_name": product_data['product_editorial']
-                },
-                {
-                    "id": "WEIGHT",
-                    "value_name": f"{product_data['product_weight']} g"
-                },
-                {
-                    "id": "WIDTH",
-                    "value_name": f"{product_data['product_width']} cm"
-                },
-                {
-                    "id": "WITH_AUGMENTED_REALITY",
-                    "value_name": "No"
-                },
-                {
-                    "id": "WITH_COLORING_PAGES",
-                    "value_name": "No"
-                },
-                {
-                    "id": "WITH_INDEX",
-                    "value_name": "Sí"
-                },
-                {
-                    "id": "SELLER_SKU",
-                    "value_name": product_data['product_sku']
-                },
-                {
-                    "id": "GTIN",
-                    "value_name": isbn
-                }
-            ],
-            "warranty": "Sin garantía",
-            "domain_id": "MLM-BOOKS",
-            "shipping": {
-                "mode": "me2",
-                "methods": [],
-                "tags": [],
-                "dimensions": None,
-                "local_pick_up": False,
-                "free_shipping": False,
-                "logistic_type": "xd_drop_off",
-                "store_pick_up": False
-            },
-            "variations": [],
-            "channels": [
-                "marketplace"
-            ]
-        }
+        meli_category = None
+
+        for i in range(len(product_data['product_categories'])):
+            _check_category = CategoriesRelated.objects.filter(method='woocommerce').filter(category_id=product_data['product_categories'][i]['id']).first()
+
+            if(_check_category):
+                meli_category = _check_category.category_related_id
         
+        if(meli_category):
+            data_new_product = {
+                "title": (product_data['product_name'][:57] + '...') if len(product_data['product_name']) > 57 else product_data['product_name'],
+                "description": product_data['product_description'],
+                "category_id": meli_category,
+                "price": round(meli_price,2),
+                "currency_id": "MXN",
+                "available_quantity": product_data['product_stock'],
+                "pictures": product_data['product_images'],
+                "buying_mode": "buy_it_now",
+                "sale_terms": [
+                    {
+                        "id": "WARRANTY_TYPE",
+                        "name": "Tipo de garantía",
+                        "value_id": "6150835",
+                        "value_name": "Sin garantía",
+                        "value_struct": None,
+                        "values": [
+                            {
+                                "id": "6150835",
+                                "name": "Sin garantía",
+                                "struct": None
+                            }
+                        ],
+                        "value_type": "list"
+                    }
+                ],
+                "listing_type_id": product_data['product_listing_type_id'],
+                "attributes": [
+                    {
+                        "id": "BRAND",
+                        "value_name": "Funko"
+                    },
+                    {
+                        "id": "HEIGHT",
+                        "value_name": f"{product_data['product_height']} cm"
+                    },
+                    {
+                        "id": "INCLUDES_STRAP",
+                        "value_name": "No"
+                    },
+                    {
+                        "id": "GTIN",
+                        "value_name": isbn
+                    },
+                    {
+                        "id": "ITEM_CONDITION",
+                        "value_name": "Nuevo"
+                    },
+                    {
+                        "id": "MATERIAL",
+                        "value_name": "Plástico"
+                    },
+                    {
+                        "id": "MIN_RECOMMENDED_AGE",
+                        "value_name": "3 años"
+                    },
+                    {
+                        "id": "MODEL",
+                        "value_name": "Funko"
+                    },
+                    {
+                        "id": "PATTERN_NAME",
+                        "value_name": (product_data['product_name'][:57] + '...') if len(product_data['product_name']) > 57 else product_data['product_name']
+                    },
+                    {
+                        "id": "PIECES_NUMBER",
+                        "value_name": "1"
+                    },
+                    {
+                        "id": "SALE_FORMAT",
+                        "value_name": "Unidad"
+                    },
+                    {
+                        "id": "UNITS_PER_PACK",
+                        "value_name": 1
+                    },
+                    {
+                        "id": "WEIGHT",
+                        "value_name": f"{product_data['product_weight']} g"
+                    },
+                    {
+                        "id": "WIDTH",
+                        "value_name": f"{product_data['product_width']} cm"
+                    },
+                    {
+                        "id": "SELLER_SKU",
+                        "value_name": product_data['product_sku']
+                    }
+                ],
+                "warranty": "Sin garantía",
+                "domain_id": "MLM-KEYCHAINS",
+                "shipping": {
+                    "mode": "me2",
+                    "methods": [],
+                    "tags": [],
+                    "dimensions": None,
+                    "local_pick_up": False,
+                    "free_shipping": False,
+                    "logistic_type": "xd_drop_off",
+                    "store_pick_up": False
+                },
+                "variations": [],
+                "channels": [
+                    "marketplace"
+                ]
+            }
+            
+        else:
+            data_new_product = {
+                "title": (product_data['product_name'][:57] + '...') if len(product_data['product_name']) > 57 else product_data['product_name'],
+                "description": product_data['product_description'],
+                "category_id": "MLM1196",
+                "price": round(meli_price,2),
+                "currency_id": "MXN",
+                "available_quantity": product_data['product_stock'],
+                "pictures": product_data['product_images'],
+                "buying_mode": "buy_it_now",
+                "sale_terms": [
+                    {
+                        "id": "WARRANTY_TYPE",
+                        "name": "Tipo de garantía",
+                        "value_id": "6150835",
+                        "value_name": "Sin garantía",
+                        "value_struct": None,
+                        "values": [
+                            {
+                                "id": "6150835",
+                                "name": "Sin garantía",
+                                "struct": None
+                            }
+                        ],
+                        "value_type": "list"
+                    }
+                ],
+                "listing_type_id": product_data['product_listing_type_id'],
+                "attributes": [
+                    {
+                        "id": "AUTHOR",
+                        "value_name": author
+                    },
+                    {
+                        "id": "ACCESSORIES_INCLUDED",
+                        "value_name": "No"
+                    },
+                    {
+                        "id": "BOOKS_NUMBER_PER_SET",
+                        "value_name": "1"   
+                    },
+                    {
+                        "id": "BOOK_COLLECTION",
+                        "value_name": product_data['product_collection']
+                    },
+                    {
+                        "id": "BOOK_COVER",
+                        "value_name": "Blanda"
+                    },
+                    {
+                        "id": "BOOK_COVER_MATERIAL",
+                        "value_name": "Papel"
+                    },
+                    {
+                        "id": "BOOK_EDITION",
+                        "value_name": "1"
+                    },
+                    {
+                        "id": "BOOK_GENRE",
+                        "value_name": "Aventura,Manga"
+                    },
+                    {
+                        "id": "BOOK_PUBLISHER",
+                        "value_name": product_data['product_editorial']
+                    },
+                    {
+                        "id": "BOOK_SERIE",
+                        "value_name": product_data['product_collection']
+                    },
+                    {
+                        "id": "BOOK_SIZE",
+                        "value_name": "Manga"
+                    },
+                    {
+                        "id": "BOOK_SUBGENRES",
+                        "value_name": "Manga"
+                    },
+                    {
+                        "id": "BOOK_TITLE",
+                        "value_name": product_data['product_collection']
+                    },
+                    {
+                        "id": "BOOK_VERSION",
+                        "value_name": "Primera"
+                    },
+                    {
+                        "id": "BOOK_VOLUME",
+                        "value_name": "1"
+                    },
+                    {
+                        "id": "CO_AUTHORS",
+                        "value_name": "-1"
+                    },
+                    {
+                        "id": "HEIGHT",
+                        "value_name": f"{product_data['product_height']} cm"
+                    },
+                    {
+                        "id": "IS_WRITTEN_IN_CAPITAL_LETTERS",
+                        "value_name": "No"
+                    },
+                    {
+                        "id": "ITEM_CONDITION",
+                        "value_name": "Nuevo"
+                    },
+                    {
+                        "id": "LANGUAGE",
+                        "value_name": "Español"
+                    },
+                    {
+                        "id": "MAX_RECOMMENDED_AGE",
+                        "value_name": "100 años"
+                    },
+                    {
+                        "id": "MIN_RECOMMENDED_AGE",
+                        "value_name": "8 años"
+                    },
+                    {
+                        "id": "NARRATION_TYPE",
+                        "value_name": "Manga"
+                    },
+                    {
+                        "id": "PAGES_NUMBER",
+                        "value_name": "150"
+                    },
+                    {
+                        "id": "PUBLICATION_YEAR",
+                        "value_name": "201"
+                    },
+                    {
+                        "id": "TRANSLATORS",
+                        "value_name": product_data['product_editorial']
+                    },
+                    {
+                        "id": "WEIGHT",
+                        "value_name": f"{product_data['product_weight']} g"
+                    },
+                    {
+                        "id": "WIDTH",
+                        "value_name": f"{product_data['product_width']} cm"
+                    },
+                    {
+                        "id": "WITH_AUGMENTED_REALITY",
+                        "value_name": "No"
+                    },
+                    {
+                        "id": "WITH_COLORING_PAGES",
+                        "value_name": "No"
+                    },
+                    {
+                        "id": "WITH_INDEX",
+                        "value_name": "Sí"
+                    },
+                    {
+                        "id": "SELLER_SKU",
+                        "value_name": product_data['product_sku']
+                    },
+                    {
+                        "id": "GTIN",
+                        "value_name": isbn
+                    }
+                ],
+                "warranty": "Sin garantía",
+                "domain_id": "MLM-BOOKS",
+                "shipping": {
+                    "mode": "me2",
+                    "methods": [],
+                    "tags": [],
+                    "dimensions": None,
+                    "local_pick_up": False,
+                    "free_shipping": False,
+                    "logistic_type": "xd_drop_off",
+                    "store_pick_up": False
+                },
+                "variations": [],
+                "channels": [
+                    "marketplace"
+                ]
+            }
+            
         data_new_product = json.dumps(data_new_product)
         self._api_item_create = f"{self._api_meli}/items"
 
