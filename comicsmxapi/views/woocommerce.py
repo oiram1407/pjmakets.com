@@ -618,7 +618,7 @@ class WoocommerceWebhook(APIView):
                     "product_listing_type_id": "gold_pro"
                 }
                 product_obj_meli_new = product_obj_meli.setProductUpdate(product_data_meli)
-                
+
                 #check if exists record
                 if(self.check_product_mercado_libre is None):
                     #Save Related ID

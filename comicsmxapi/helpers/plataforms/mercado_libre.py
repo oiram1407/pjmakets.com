@@ -122,7 +122,9 @@ class MercadoLibreHelper:
 
     def calcPrice(self, data): 
         meli_price = 0
-        shipping_price = 0
+        fee_isr = 1
+        fee_isr = float(fee_isr/100)
+        fee_meli = 0
         _original_pice = float(data['product_price']) + float(10)
 
         api_price = f"{self._api_meli}/sites/MLM/listing_prices?price={_original_pice}&category_id=MLM1196"
@@ -139,13 +141,15 @@ class MercadoLibreHelper:
         for i in range(len(_prices)):
             _price = _prices[i]
             if(_price['listing_type_id'] == data['product_listing_type_id']):
-                meli_price += _original_pice
-                meli_price += float(_price['sale_fee_amount'])
-                meli_price += (float(_price['sale_fee_amount'])*float(1/_price['sale_fee_details']['percentage_fee']))
+                fee_meli = _price['sale_fee_details']['percentage_fee']/100
+                constant_meli = 33
+
+                meli_price = ((_original_pice+constant_meli)/(1-fee_meli-fee_isr))
 
         meli_price = round(meli_price, 2)
 
         return meli_price
+
 
     def calcShipping(self, data):
         _weight = int(float(data['product_weight'])*1000)
